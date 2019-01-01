@@ -19,7 +19,7 @@ The_VersionNumb := "0.0.1"
 #include json.ahk\export.ahk
 #include wrappers.ahk\export.ahk
 #include util-misc.ahk\export.ahk
-#include biga.ahk\export.ahk
+#include logs.ahk\export.ahk
 
 ;/--\--/--\--/--\--/--\--/--\
 ; Global Vars
@@ -39,6 +39,14 @@ FormatTime, TOM_MM, %Tomorrow%, MM
 FormatTime, TOM_YYYY, %Tomorrow%, yyyy
 FormatTime, TOM_YY, %Tomorrow%, yyyy
 TOM_YY := SubStr(TOM_YY, 3, 2)
+
+;;Creat Logging obj
+log := new Log_class(The_ProjectName "-" A_YYYY A_MM A_DD, A_ScriptDir "\LogFiles")
+log.maxSizeMBLogFile_Default := 99 ;Set log Max size to 99 MB
+log.application := The_ProjectName
+log.preEntryString := "%A_NowUTC% -- "
+log.initalizeNewLogFile(false, The_ProjectName " v" The_VersionNumb " log begins...`n")
+log.add(The_ProjectName " launched from user " A_UserName " on the machine " A_ComputerName ". Version: v" The_VersionNumb)
 
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
 ; StartUp
@@ -62,9 +70,6 @@ The_MemoryFile := ;blank
 Parse:
 FormatTime, Today, , yyyyMMdd
 
-The_ListofDirs := Settings.dirs
-The_ListofDirs.push(A_ScriptDir)
-
 ;; New folder processing
 if (Settings.parsing) {
 	for key, value in Settings.parsing
@@ -74,12 +79,12 @@ if (Settings.parsing) {
 		if (value.recursive) {
 			value.recursive := " R"
 		}
+		log.add(searchdirstring " is being searched for files")
 		loop, Files, %searchdirstring%, % value.recursive
 		{
 			item := {}
 			value.filepattern := transformStringVars(value.filepattern)
 			RegExResult := fn_QuickRegEx(A_LoopFileName,value.filepattern)
-			; msgbox, % fn_QuickRegEx(A_LoopFileName,value.filepattern)
 			if (RegExResult != false) {
 				item.filename := A_LoopFileName
 				item.filepath := A_LoopFileLongPath
@@ -89,15 +94,18 @@ if (Settings.parsing) {
 				;; Insert data if it has a valid date and filepath
 				if (item.filepath) {
 					AllFiles_Array.push(item)
+					log.add(A_LoopFileName " Added to list of files to be copied")
 				} else {
-					; else is not handled in a seprate loop checking all files below
+					; do nothing
 				}
 			}
 		}
 	}
 } else {
-	msg("No .\settings.json file found`n`nThe application will quit")
-	ExitApp
+	msg("No .\settings.json file found`n`nThe application will quit.")
+	log.add("Quit due to missing settings file.", "FATAL")
+	log.finalizeLog(The_ProjectName . " log ends.")
+	ExitApp, 1
 }
 
 
@@ -105,16 +113,18 @@ if (Settings.parsing) {
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
 ; Move files
 ;\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/
-Array_Gui(AllFiles_Array)
-ExportPath := Settings.exportPath "\" TOM_MM "-" TOM_DD "-" TOM_YY "\"
+; Array_Gui(AllFiles_Array)
 Settings.exportPath := transformStringVars(Settings.exportPath)
-FileCreateDir(ExportPath)
+FileCreateDir(Settings.exportPath)
 loop, % AllFiles_Array.MaxIndex() {
 	item := AllFiles_Array[A_Index]
 	FileCopy(item.filepath, Settings.exportPath item.filename)
 	if (ErrorLevel != 0) {
 		;; log failure to move file
+		log.add(item.filename " failed to be copied to the destination folder '" Settings.exportPath "' `n This is often the result of a permissions issue.", "ERROR")
 		Errors.push(1)
+	} else {
+		log.add(item.filename " moved to the destination folder with success")
 	}
 }
 
@@ -123,16 +133,26 @@ loop, % AllFiles_Array.MaxIndex() {
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
 ; Report Generation
 ;\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/
-FileDelete, %Options_DBLocation%\DB.json
-loop, % AllFiles_Array.MaxIndex() {
-	
-}
-FileAppend, %The_MemoryFile%, %Options_DBLocation%\DB.json
+; FileDelete, %Options_DBLocation%\DB.json
+; loop, % AllFiles_Array.MaxIndex() {
+	; BLANK ATM
+; }
+; FileAppend, %The_MemoryFile%, %Options_DBLocation%\DB.json
 
-
+;/--\--/--\--/--\--/--\--/--\--/--\--/--\
+; WrapUp
+;\--/--\--/--\--/--\--/--\--/--\--/--\--/
 if (Errors.MaxIndex() >= 1) {
-	msg(Errors.MaxIndex() " Errors were encountered. Check logfiles for details")
+	msg := Errors.MaxIndex() " Errors were encountered. Check logfiles for details at " Settings.logfiledir
+	msg(msg)
+	log.add(msg, "ERROR")
+} else {
+	log.add("All files moved without error.")
 }
+
+;Wrap up logs and Exit
+log.finalizeLog(The_ProjectName . " log ends.")
+ExitApp, 0
 
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
 ; Subroutines
