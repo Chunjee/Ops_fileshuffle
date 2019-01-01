@@ -1,0 +1,31 @@
+{
+    "exportPath": "\\\\\\00 axcis\\ZIPPED\\%TOM_MM%-%TOM_DD%-%TOM_YY%\\",
+    "logfiledir": "C:\\Errors\\",
+
+    "parsing": [
+        {
+            "name": "TEST",
+            "dir": "%A_ScriptDir%",
+            "filepattern": "(.*\\.pdf)",
+            "association": "TEST"
+        },
+        {
+            "name": "Sweden",
+            "dir": "\\\\10.209.2.60\\trackdata",
+            "filepattern": "([HT].*%TOM_YYYY%%TOM_MM%%TOM_DD%.*\\.xml)",
+            "association": "Sweden"
+        },
+        {
+            "name": "Charleston",
+            "dir": "\\\\10.209.2.60\\Axcis\\Charleston",
+            "filepattern": "[HT].*%TOM_MM%%TOM_DD%.*\\.cg",
+            "association": "Charleston"
+        },
+        {
+            "name": "Great Britain",
+            "dir": "\\\\10.209.2.60\\Axcis\\Great Britain",
+            "filepattern": "(simd%TOM_YYYY%%TOM_MM%%TOM_DD%.*.zip)",
+            "association": "Great Britain"
+        }        
+    ]
+}

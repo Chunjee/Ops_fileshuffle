@@ -1,0 +1,27 @@
+{
+    "name": "ops_fileshuffle",
+    "version": "1.0.0",
+    "description": "File moving automation tool",
+    "main": "app.ahk",
+    "scripts": {
+        "newinstall": "yarn install --modules-folder ./Lib"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Chunjee/Ops_fileshuffle"
+    },
+    "dependencies": {
+        "json.ahk": "chunjee/json.ahk",
+        "logs.ahk": "chunjee/logs.ahk",
+        "sort-array.ahk": "chunjee/sort-array.ahk",
+        "string-similarity.ahk": "chunjee/string-similarity.ahk",
+        "transformStringVars.ahk": "github:chunjee/transformStringVars.ahk",
+        "wrappers.ahk": "github:chunjee/wrappers.ahk",
+        "util-misc.ahk": "gist:cf6c862be8fa18c546d2fd67d86f84aa",
+        "util-array.ahk": "gist:a71f208bd55ebd7d3b0dc60847d07467",
+
+        "unit-testing.ahk": "github:chunjee/unit-testing.ahk"
+    },
+    "author": "Shawn Brooker",
+    "license": "MIT"
+}
