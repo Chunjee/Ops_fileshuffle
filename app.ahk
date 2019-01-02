@@ -9,7 +9,7 @@
 SetBatchLines -1 ;Go as fast as CPU will allow
 #NoTrayIcon
 #SingleInstance force
-The_ProjectName := "filemover"
+The_ProjectName := "fileshuffle"
 The_VersionNumb := "0.0.1"
 
 ;Dependencies
@@ -24,8 +24,6 @@ The_VersionNumb := "0.0.1"
 ;/--\--/--\--/--\--/--\--/--\
 ; Global Vars
 ;\--/--\--/--\--/--\--/--\--/
-Sb_GlobalNameSpace()
-Sb_InstallFiles()
 ;;File locations
 Settings_FilePath := A_ScriptDir "\settings.json"
 AllFiles_Array := []
@@ -39,14 +37,9 @@ FormatTime, TOM_MM, %Tomorrow%, MM
 FormatTime, TOM_YYYY, %Tomorrow%, yyyy
 FormatTime, TOM_YY, %Tomorrow%, yyyy
 TOM_YY := SubStr(TOM_YY, 3, 2)
-
-;;Creat Logging obj
-log := new Log_class(The_ProjectName "-" A_YYYY A_MM A_DD, A_ScriptDir "\LogFiles")
-log.maxSizeMBLogFile_Default := 99 ;Set log Max size to 99 MB
-log.application := The_ProjectName
-log.preEntryString := "%A_NowUTC% -- "
-log.initalizeNewLogFile(false, The_ProjectName " v" The_VersionNumb " log begins...`n")
-log.add(The_ProjectName " launched from user " A_UserName " on the machine " A_ComputerName ". Version: v" The_VersionNumb)
+;some other more obscure stuff
+FormatTime, TOM_D, %Tomorrow%, d
+FormatTime, TOM_M, %Tomorrow%, M
 
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
 ; StartUp
@@ -62,6 +55,14 @@ if (Fn_InArray(CL_Args,"auto")) {
 FileRead, The_MemoryFile, % Settings_FilePath
 Settings := JSON.parse(The_MemoryFile)
 The_MemoryFile := ;blank
+
+;;Creat Logging obj
+log := new Log_class(The_ProjectName "-" A_YYYY A_MM A_DD, Settings.logfiledir)
+log.maxSizeMBLogFile_Default := 99 ;Set log Max size to 99 MB
+log.application := The_ProjectName
+log.preEntryString := "%A_NowUTC% -- "
+log.initalizeNewLogFile(false, The_ProjectName " v" The_VersionNumb " log begins...`n")
+log.add(The_ProjectName " launched from user " A_UserName " on the machine " A_ComputerName ". Version: v" The_VersionNumb)
 
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
 ; MAIN
