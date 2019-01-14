@@ -10,7 +10,7 @@ SetBatchLines -1 ;Go as fast as CPU will allow
 #NoTrayIcon
 #SingleInstance force
 The_ProjectName := "fileshuffle"
-The_VersionNumb := "0.0.1"
+The_VersionNumb := "1.0.0"
 
 ;Dependencies
 #include %A_ScriptDir%\Lib
@@ -119,7 +119,15 @@ Settings.exportPath := transformStringVars(Settings.exportPath)
 FileCreateDir(Settings.exportPath)
 loop, % AllFiles_Array.MaxIndex() {
 	item := AllFiles_Array[A_Index]
-	FileCopy(item.filepath, Settings.exportPath item.filename)
+
+	item.fileSizeOrigin	:= FileGetSize(item.filepath)
+	item.fileSizeDest 	:= FileGetSize(Settings.exportPath . item.filename)
+	if (item.fileSizeOrigin == item.fileSizeDest) {
+		replacefile_flag := 0
+	} else {
+		replacefile_flag := 1
+	}
+	FileCopy(item.filepath, Settings.exportPath . item.filename, replacefile_flag)
 	if (ErrorLevel != 0) {
 		;; log failure to move file
 		log.add(item.filename " failed to be copied to the destination folder '" Settings.exportPath "' `n This is often the result of a permissions issue.", "ERROR")
