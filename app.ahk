@@ -29,27 +29,26 @@ Settings_FilePath := A_ScriptDir "\settings.json"
 AllFiles_Array := []
 Errors := []
 
-;; Make some special vars for config file date prediction
-Tomorrow := %A_Now%
-Tomorrow += 1, d
-FormatTime, TOM_DD, %Tomorrow%, dd
-FormatTime, TOM_MM, %Tomorrow%, MM
-FormatTime, TOM_YYYY, %Tomorrow%, yyyy
-FormatTime, TOM_YY, %Tomorrow%, yyyy
-TOM_YY := SubStr(TOM_YY, 3, 2)
-;some other more obscure stuff
-FormatTime, TOM_D, %Tomorrow%, d
-FormatTime, TOM_M, %Tomorrow%, M
+
 
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
 ; StartUp
 ;\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/
 
 ;Check for CommandLineArguments
-CL_Args = StrSplit(1 , "|")
+RawArgs = %1%
+CL_Args := StrSplit(RawArgs,"|")
 if (Fn_InArray(CL_Args,"auto")) {
 	AUTOMODE := true
 }
+if (CL_Args.MaxIndex() > 0) {
+	loop, % CL_Args.MaxIndex() {
+		if (fn_QuickRegEx(CL_Args[A_Index],"(\d{8})") != "") {
+			The_CustomDate := CL_Args[A_Index]
+		}
+	}
+}
+
 
 ;;Import and parse settings file
 FileRead, The_MemoryFile, % Settings_FilePath
@@ -69,7 +68,24 @@ log.add(The_ProjectName " launched from user " A_UserName " on the machine " A_C
 ;\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/
 ;; Loop all config
 Parse:
-FormatTime, Today, , yyyyMMdd
+if (The_CustomDate != "") {
+	FormatTime, The_Date, %The_CustomDate%000000, yyyyMMddhhmmss
+} else {
+	;; Make some special vars for config file date prediction
+	Tomorrow := %A_Now%
+	Tomorrow += 1, d
+	The_Date := Tomorrow
+}
+FormatTime, TOM_DD, %The_Date%, dd
+FormatTime, TOM_MM, %The_Date%, MM
+FormatTime, TOM_YYYY, %The_Date%, yyyy
+FormatTime, TOM_YY, %The_Date%, yyyy
+TOM_YY := SubStr(TOM_YY, 3, 2)
+;some other more obscure stuff
+FormatTime, TOM_D, %The_Date%, d
+FormatTime, TOM_M, %The_Date%, M
+log.add("Executing for the following date: " TOM_YYYY TOM_MM TOM_DD)
+
 
 ;; New folder processing
 if (Settings.parsing) {
@@ -173,22 +189,6 @@ ExitApp, 0
 ; Functions
 ;\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/
 
-;Gets the timestamp out of a filename and converts it into a day of the week name
-Fn_GetWeekName(para_String) ;Example Input: "20140730Scottsville"
-{
-	RegExMatch(para_String, "(\d{4})(\d{2})(\d{2})", RE_TimeStamp)
-	if (RE_TimeStamp1 != "") {
-		;dddd corresponds to Monday for example
-		FormatTime, l_WeekdayName , %RE_TimeStamp1%%RE_TimeStamp2%%RE_TimeStamp3%, dddd
-	}
-	if (l_WeekdayName != "") {
-		return l_WeekdayName
-	} else {
-		;throw error and return false if unsuccessful
-		throw error
-		return false
-	}
-}
 
 ;/--\--/--\--/--\--/--\--/--\
 ; GUI
