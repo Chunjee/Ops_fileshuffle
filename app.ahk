@@ -10,7 +10,7 @@ SetBatchLines -1 ;Go as fast as CPU will allow
 #NoTrayIcon
 #SingleInstance force
 The_ProjectName := "fileshuffle"
-The_VersionNumb := "1.0.0"
+The_VersionNumb := "1.1.0"
 
 ;Dependencies
 #include %A_ScriptDir%\Lib
@@ -54,6 +54,7 @@ if (CL_Args.MaxIndex() > 0) {
 FileRead, The_MemoryFile, % Settings_FilePath
 Settings := JSON.parse(The_MemoryFile)
 The_MemoryFile := ;blank
+; Array_Gui(Settings)
 
 ;;Creat Logging obj
 log := new Log_class(The_ProjectName "-" A_YYYY A_MM A_DD, Settings.logfiledir)
@@ -87,6 +88,7 @@ FormatTime, TOM_M, %The_Date%, M
 log.add("Executing for the following date: " TOM_YYYY TOM_MM TOM_DD)
 
 
+Settings.exportPath := transformStringVars(Settings.exportPath)
 ;; New folder processing
 if (Settings.parsing) {
 	for key, value in Settings.parsing
@@ -102,13 +104,25 @@ if (Settings.parsing) {
 			item := {}
 			value.filepattern := transformStringVars(value.filepattern)
 			RegExResult := fn_QuickRegEx(A_LoopFileName,value.filepattern)
+			;if a filename matches the patern required
 			if (RegExResult != false) {
 				item.filename := A_LoopFileName
 				item.filepath := A_LoopFileLongPath
 				item.date := TOM_YYYY . TOM_MM . TOM_DD
 				item.association := value.association
+				item.destination := Settings.exportPath . item.filename
+				;if this parser has an associated rename(s), loop and apply them all
+				if (value.renames) {
+					Loop, % value.renames.MaxIndex() {
+						For Key1, Value1 in value.renames[A_Index]
+						{
+							item.changename := StrReplace(item.filename, Key1, Value1)
+							item.destination := Settings.exportPath . item.changename
+						}
+					}
+				}
 				
-				;; Insert data if it has a valid date and filepath
+				;; Insert data if it has a valid filepath
 				if (item.filepath) {
 					AllFiles_Array.push(item)
 					log.add(A_LoopFileName " Added to list of files to be copied")
@@ -124,28 +138,30 @@ if (Settings.parsing) {
 	log.finalizeLog(The_ProjectName . " log ends.")
 	ExitApp, 1
 }
-
+Array_Gui(AllFiles_Array)
+ExitApp
 
 
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
 ; Move files
 ;\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/
 ; Array_Gui(AllFiles_Array)
-Settings.exportPath := transformStringVars(Settings.exportPath)
+
 FileCreateDir(Settings.exportPath)
 loop, % AllFiles_Array.MaxIndex() {
 	item := AllFiles_Array[A_Index]
 
 	item.fileSizeOrigin	:= FileGetSize(item.filepath)
-	item.fileSizeDest 	:= FileGetSize(Settings.exportPath . item.filename)
-	if (item.fileSizeOrigin == item.fileSizeDest) {
+	item.fileSizeDest 	:= FileGetSize(item.destination)
+	if (item.fileSizeOrigin = item.fileSizeDest) {
 		replacefile_flag := 0
 	} else {
-		replacefile_flag := 1
+		FileDelete(item.destination)
+		Sleep 1000
+		FileCopy(item.filepath, item.destination, 1)
 	}
-	FileCopy(item.filepath, Settings.exportPath . item.filename, replacefile_flag)
 	if (ErrorLevel != 0) {
-		;; log failure to move file
+		;; log failure to copy file
 		log.add(item.filename " failed to be copied to the destination folder '" Settings.exportPath "' `n This is often the result of a permissions issue.", "ERROR")
 		Errors.push(1)
 	} else {
@@ -189,6 +205,22 @@ ExitApp, 0
 ; Functions
 ;\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/
 
+;Gets the timestamp out of a filename and converts it into a day of the week name
+Fn_GetWeekName(para_String) ;Example Input: "20140730Scottsville"
+{
+	RegExMatch(para_String, "(\d{4})(\d{2})(\d{2})", RE_TimeStamp)
+	if (RE_TimeStamp1 != "") {
+		;dddd corresponds to Monday for example
+		FormatTime, l_WeekdayName , %RE_TimeStamp1%%RE_TimeStamp2%%RE_TimeStamp3%, dddd
+	}
+	if (l_WeekdayName != "") {
+		return l_WeekdayName
+	} else {
+		;throw error and return false if unsuccessful
+		throw error
+		return false
+	}
+}
 
 ;/--\--/--\--/--\--/--\--/--\
 ; GUI
