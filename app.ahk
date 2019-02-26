@@ -10,7 +10,7 @@ SetBatchLines -1 ;Go as fast as CPU will allow
 #NoTrayIcon
 #SingleInstance force
 The_ProjectName := "fileshuffle"
-The_VersionNumb := "1.1.0"
+The_VersionNumb := "1.1.1"
 
 ;Dependencies
 #include %A_ScriptDir%\Lib
@@ -138,8 +138,6 @@ if (Settings.parsing) {
 	log.finalizeLog(The_ProjectName . " log ends.")
 	ExitApp, 1
 }
-Array_Gui(AllFiles_Array)
-ExitApp
 
 
 ;/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\--/--\
@@ -162,7 +160,7 @@ loop, % AllFiles_Array.MaxIndex() {
 	}
 	if (ErrorLevel != 0) {
 		;; log failure to copy file
-		log.add(item.filename " failed to be copied to the destination folder '" Settings.exportPath "' `n This is often the result of a permissions issue.", "ERROR")
+		log.add(item.filename " failed to be copied to the destination folder '" Settings.exportPath "' `n This is often the result of a permissions issue or existing file.", "ERROR")
 		Errors.push(1)
 	} else {
 		log.add(item.filename " moved to the destination folder with success")
@@ -188,7 +186,7 @@ if (Errors.MaxIndex() >= 1) {
 	msg(msg)
 	log.add(msg, "ERROR")
 } else {
-	log.add("All files moved without error.")
+	log.add("All files moved without errors.")
 }
 
 ;Wrap up logs and Exit
@@ -235,4 +233,3 @@ Fn_GetWeekName(para_String) ;Example Input: "20140730Scottsville"
 ;/--\--/--\--/--\--/--\--/--\
 ; Small functions
 ;\--/--\--/--\--/--\--/--\--/
-
