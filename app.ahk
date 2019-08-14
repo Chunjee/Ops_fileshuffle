@@ -10,7 +10,7 @@ SetBatchLines -1 ;Go as fast as CPU will allow
 #NoTrayIcon
 #SingleInstance force
 The_ProjectName := "fileshuffle"
-The_VersionNumb := "1.1.1"
+The_VersionNumb := "1.2.0"
 
 ;Dependencies
 #include %A_ScriptDir%\Lib
@@ -98,7 +98,7 @@ if (Settings.parsing) {
 		if (value.recursive) {
 			value.recursive := " R"
 		}
-		log.add(searchdirstring " is being searched for files")
+		log.add(searchdirstring " is being searched for files that match the following pattern: " value.filepattern "|| This is inteded to collect files associated with: " value.association)
 		loop, Files, %searchdirstring%, % value.recursive
 		{
 			item := {}
@@ -122,6 +122,7 @@ if (Settings.parsing) {
 					}
 				}
 				
+				
 				;; Insert data if it has a valid filepath
 				if (item.filepath) {
 					AllFiles_Array.push(item)
@@ -129,6 +130,16 @@ if (Settings.parsing) {
 				} else {
 					; do nothing
 				}
+
+				;; Gate .actions items with a check
+				if (value.actions) {
+					;; Delete file(s) if specified by config
+					if fn_InArray(value.actions,"delete") {
+						log.add("Attempting to delete file:" A_LoopFileName " (" A_LoopFileLongPath ")")
+						FileDelete(A_LoopFileLongPath)
+						continue
+					}
+				} ; <-- End of .actions handling -->
 			}
 		}
 	}
@@ -154,7 +165,7 @@ loop, % AllFiles_Array.MaxIndex() {
 	if (item.fileSizeOrigin = item.fileSizeDest) {
 		replacefile_flag := 0
 	} else {
-		FileDelete(item.destination)
+		FileDelete(item.destination) ;;Delete file if the latest version differs in size (meaning it has changed)
 		Sleep 1000
 		FileCopy(item.filepath, item.destination, 1)
 	}
@@ -222,11 +233,6 @@ Fn_GetWeekName(para_String) ;Example Input: "20140730Scottsville"
 
 ;/--\--/--\--/--\--/--\--/--\
 ; GUI
-;\--/--\--/--\--/--\--/--\--/
-
-
-;/--\--/--\--/--\--/--\--/--\
-; Subroutines
 ;\--/--\--/--\--/--\--/--\--/
 
 
